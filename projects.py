@@ -387,7 +387,11 @@ def main():
 
     if args.list:
         for key in keys:
-            print key
+            if args.sort is not None:
+                claim = projects[key][args.sort]
+                print(key, claim.format(show_sources=False))
+            else:
+                print(key)
     else:
         for key, claims in projects.items():
             print('%s\n%s\n' % (key, claims.format(
