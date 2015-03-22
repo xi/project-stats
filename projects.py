@@ -16,6 +16,8 @@ try:
 except ImportError:
     Cheesecake = None
 
+SOURCES = ['github', 'gitorious', 'local', 'pypi', 'bower']
+
 KEYS = [
     'name',
     'description',
@@ -316,17 +318,17 @@ def main():
             project = config['projects'][key]
             claims = ClaimsDict(KEYS)
             if not args.list:
-                if 'github' in project:
-                    claims.update(
-                        get_github(
-                            project['github'],
-                            user=config['github']['user'],
-                            password=config['github']['password']),
-                        'github')
-                for source in ['gitorious', 'local', 'pypi', 'bower']:
+                for source in SOURCES:
                     if source in project:
                         fn = globals()['get_' + source]
-                        claims.update(fn(project[source]), source)
+                        if source == 'github':
+                            data = fn(
+                                project[source],
+                                user=config['github']['user'],
+                                password=config['github']['password'])
+                        else:
+                            data = fn(project[source])
+                        claims.update(data, source)
                 print('%s\n%s\n' % (key, claims.format(
                     indent=2,
                     short=args.short,
