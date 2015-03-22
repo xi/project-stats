@@ -43,6 +43,14 @@ KEYS = [
 ]
 
 
+def r_get(d, *keys):
+    """Recursively get key from dict or return None."""
+    if len(keys) == 0:
+        return d
+    elif keys[0] in d:
+        return r_get(d[keys[0]], *keys[1:])
+
+
 class Claims(object):
     def __init__(self):
         self._list = []
@@ -341,8 +349,8 @@ def main():
                         if source == 'github':
                             data = fn(
                                 project[source],
-                                user=config['github']['user'],
-                                password=config['github']['password'])
+                                user=r_get(config, 'github', 'user'),
+                                password=r_get(config, 'github', 'password'))
                         else:
                             data = fn(project[source])
                         claims.update(data, source)
