@@ -353,7 +353,7 @@ def get_projects(projects_config):
 
             projects[key] = claims
         except Exception as e:
-            logging.error("Error while gathering stats for %s: %s" % (key, e))
+            logging.error('Error while gathering stats for %s: %s' % (key, e))
     return projects
 
 
