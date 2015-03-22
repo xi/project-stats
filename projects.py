@@ -385,15 +385,15 @@ def main():
     if args.sort is not None:
         keys.sort(key=lambda k: projects[k][args.sort])
 
-    if args.list:
-        for key in keys:
+    for key in keys:
+        if args.list:
             if args.sort is not None:
                 claim = projects[key][args.sort]
                 print(key, claim.format(show_sources=False))
             else:
                 print(key)
-    else:
-        for key, claims in projects.items():
+        else:
+            claims = projects[key]
             print('%s\n%s\n' % (key, claims.format(
                 indent=2,
                 short=args.short,
