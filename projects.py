@@ -303,8 +303,8 @@ def get_travis(url):
     }
 
 
-def load_config():
-    with open('projects.yml') as fh:
+def load_config(path):
+    with open(path) as fh:
         return yaml.load(fh)
 
 
@@ -320,6 +320,9 @@ def parse_args():
         action='store_true',
         help='show only basic stats')
     parser.add_argument(
+        '-c', '--config',
+        default='projects.yml')
+    parser.add_argument(
         '-S', '--show-sources',
         action='store_true',
         help='show a source for each claim')
@@ -329,7 +332,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    config = load_config()
+    config = load_config(os.path.expanduser(args.config))
 
     keys = config['projects'].keys()
     if args.query is not None:
