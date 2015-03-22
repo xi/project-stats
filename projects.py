@@ -339,6 +339,9 @@ def parse_args():
         '-c', '--config',
         default='projects.yml')
     parser.add_argument(
+        '-z', '--sort',
+        help='sort by key')
+    parser.add_argument(
         '-S', '--show-sources',
         action='store_true',
         help='show a source for each claim')
@@ -378,6 +381,9 @@ def main():
         keys = filter(lambda k: args.query.lower() in k.lower(), keys)
 
     projects = get_projects({key: config['projects'][key] for key in keys})
+
+    if args.sort is not None:
+        keys.sort(key=lambda k: projects[k][args.sort])
 
     if args.list:
         for key in keys:
