@@ -173,7 +173,7 @@ def get_bower_info(name):
 
 @ttl_cache('xi-projects', ttl=3600)
 def get_json(url, user=None, password=None):
-    assert not ((user is None) ^ (password is None))
+    assert not (user is None) ^ (password is None)
 
     if user is None:
         req = requests.get(url)
@@ -195,7 +195,7 @@ def get_github(url, user=None, password=None):
     def _get_json(url):
         data = get_json(url, user=user, password=password)
         if 'documentation_url' in data:
-            raise requests.RequestError(data['documentation_url'])
+            raise requests.HTTPError(data['documentation_url'])
         return data
 
     def get_all_pages(url):
@@ -215,7 +215,7 @@ def get_github(url, user=None, password=None):
 
     def get_latest_tag():
         tags = get_all_pages(data['tags_url'])
-        tags = map(lambda tag: tag['name'], tags)
+        tags = [tag['name'] for tag in tags]
         if len(tags) > 0:
             return max(tags, key=lambda tag: tag.lstrip('v'))
 
@@ -368,7 +368,7 @@ def get_projects(projects_config):
 
             projects[key] = claims
         except Exception as e:
-            logging.error('Error while gathering stats for %s: %s' % (key, e))
+            logging.error('Error while gathering stats for %s: %s', key, e)
     return projects
 
 
