@@ -267,10 +267,10 @@ def get_bower(name):
     else:
         return {
             'name': data['name'],
-            'version': data['version'],
-            'homepage': data['homepage'],
-            'description': data['description'],
-            'license': data['license'],
+            'version': data.get('version'),
+            'homepage': data.get('homepage'),
+            'description': data.get('description'),
+            'license': data.get('license'),
         }
 
 
