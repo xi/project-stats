@@ -334,6 +334,29 @@ def parse_args():
     return parser.parse_args()
 
 
+def get_projects(projects_config):
+    projects = {}
+    for key, config in projects_config.items():
+        try:
+            claims = ClaimsDict(KEYS)
+            for source in SOURCES:
+                if source in config:
+                    fn = globals()['get_' + source]
+                    if source == 'github':
+                        data = fn(
+                            config[source],
+                            user=r_get(config, 'github', 'user'),
+                            password=r_get(config, 'github', 'password'))
+                    else:
+                        data = fn(config[source])
+                    claims.update(data, source)
+
+            projects[key] = claims
+        except Exception as e:
+            logging.error("Error while gathering stats for %s: %s" % (key, e))
+    return projects
+
+
 def main():
     args = parse_args()
     config = load_config(os.path.expanduser(args.config))
@@ -342,33 +365,17 @@ def main():
     if args.query is not None:
         keys = filter(lambda k: args.query.lower() in k.lower(), keys)
 
+    projects = get_projects({key: config['projects'][key] for key in keys})
+
     if args.list:
         for key in keys:
             print key
-        return
-
-    for key in keys:
-        try:
-            project = config['projects'][key]
-            claims = ClaimsDict(KEYS)
-            if not args.list:
-                for source in SOURCES:
-                    if source in project:
-                        fn = globals()['get_' + source]
-                        if source == 'github':
-                            data = fn(
-                                project[source],
-                                user=r_get(config, 'github', 'user'),
-                                password=r_get(config, 'github', 'password'))
-                        else:
-                            data = fn(project[source])
-                        claims.update(data, source)
-                print('%s\n%s\n' % (key, claims.format(
-                    indent=2,
-                    short=args.short,
-                    show_sources=args.show_sources)))
-        except Exception as e:
-            logging.error("Error while gathering stats for %s: %s" % (key, e))
+    else:
+        for key, claims in projects.items():
+            print('%s\n%s\n' % (key, claims.format(
+                indent=2,
+                short=args.short,
+                show_sources=args.show_sources)))
 
 
 if __name__ == '__main__':
