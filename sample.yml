@@ -1,3 +1,4 @@
 projects:
   projects:
     local: .
+    github: https://github.com/xi/project-stats
