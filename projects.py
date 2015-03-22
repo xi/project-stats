@@ -168,9 +168,11 @@ def get_xml(url):
 
 
 def get_github(url, user=None, password=None):
-    api_url = re.sub(
-        'https?://github.com', 'https://api.github.com/repos', url)
-    data = get_json(api_url, user=user, password=password)
+    def _get_json(url):
+        data = get_json(url, user=user, password=password)
+        if 'documentation_url' in data:
+            raise requests.RequestError(data['documentation_url'])
+        return data
 
     def get_all_pages(url):
         l = []
@@ -178,10 +180,14 @@ def get_github(url, user=None, password=None):
         page = 1
         while new:
             u = url + '?page=%i' % page
-            new = get_json(u, user=user, password=password)
+            new = _get_json(u)
             l += new
             page += 1
         return l
+
+    api_url = re.sub(
+        'https?://github.com', 'https://api.github.com/repos', url)
+    data = _get_json(api_url)
 
     def get_latest_tag():
         tags = get_all_pages(data['tags_url'])
@@ -191,7 +197,7 @@ def get_github(url, user=None, password=None):
 
     def get_open_pull_requests():
         url = data['pulls_url'].replace('{/number}', '')
-        pulls = get_json(url)
+        pulls = _get_json(url)
         return len(pulls)
 
     return {
