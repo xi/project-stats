@@ -305,6 +305,11 @@ def main():
     if args.project is not None:
         keys = filter(lambda k: args.project.lower() in k.lower(), keys)
 
+    if args.list:
+        for key in keys:
+            print key
+        return
+
     for key in keys:
         try:
             project = config['projects'][key]
