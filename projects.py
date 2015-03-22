@@ -1,3 +1,4 @@
+from functools import total_ordering
 from xml.etree import ElementTree
 import argparse
 import json
@@ -53,6 +54,7 @@ def r_get(d, *keys):
         return r_get(d[keys[0]], *keys[1:])
 
 
+@total_ordering
 class Claims(object):
     def __init__(self):
         self._list = []
@@ -75,6 +77,9 @@ class Claims(object):
             i = -1
         self._list[i][1].append(source)
 
+    def values(self):
+        return [value for value, sources in self._list]
+
     def format(self, show_sources=True):
         def _format_claim(value, sources):
             s = str(value)
@@ -82,6 +87,9 @@ class Claims(object):
                 s += ' (%s)' % ', '.join(sources)
             return s
         return '; '.join([_format_claim(v, srcs) for v, srcs in self._list])
+
+    def __lt__(self, other):
+        return self.values() < other.values()
 
 
 class ClaimsDict(object):
