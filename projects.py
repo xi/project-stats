@@ -89,14 +89,16 @@ class ClaimsDict(object):
         self._data = {}
 
     def update(self, data, source):
-        assert set(data.keys()).issubset(self._keys)
+        for key in data:
+            if key not in self._keys:
+                raise KeyError(key)
         if source not in self._data:
             self._data[source] = {}
         self._data[source].update(data)
 
     def __getitem__(self, key):
         if key not in self._keys:
-            raise KeyError
+            raise KeyError(key)
         claims = Claims()
         for source, data in self._data.items():
             if key in data:
