@@ -256,7 +256,7 @@ def get_local(path):
     tail = git('rev-list', 'HEAD').splitlines()[-1]
 
     return {
-        'name': os.path.basename(path.rstrip('/')),
+        'name': os.path.basename(os.path.abspath(path)),
         'file_count': len(git('ls-files').splitlines()),
         'unstaged_changes': 'Changes not staged for commit' in git('status'),
         'uncommited_changes': 'Changes to be committed' in git('status'),
