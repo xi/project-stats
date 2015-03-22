@@ -6,6 +6,7 @@ installation
 ------------
 
 ::
+
    pip install project-stats
 
 configuration
