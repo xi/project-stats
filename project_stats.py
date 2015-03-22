@@ -386,6 +386,7 @@ def main():
         keys = filter(lambda k: args.query.lower() in k.lower(), keys)
 
     projects = get_projects({key: config['projects'][key] for key in keys})
+    keys = filter(lambda k: k in projects, keys)
 
     if args.sort is not None:
         keys.sort(key=lambda k: projects[k][args.sort])
