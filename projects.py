@@ -125,7 +125,10 @@ def cheesecake_index(name):
 
 @ttl_cache('xi-projects-bower', ttl=3600)
 def get_bower_info(name):
-    s = subprocess.check_output(['bower', 'info', name])
+    try:
+        s = subprocess.check_output(['bower', 'info', name])
+    except OSError:
+        return None
 
     # re handles \n specially, so it is replaced by \t
     s = '\t'.join(s.splitlines())
@@ -259,13 +262,16 @@ def get_pypi(url):
 
 def get_bower(name):
     data = get_bower_info(name)
-    return {
-        'name': data['name'],
-        'version': data['version'],
-        'homepage': data['homepage'],
-        'description': data['description'],
-        'license': data['license'],
-    }
+    if data is None:
+        return {}
+    else:
+        return {
+            'name': data['name'],
+            'version': data['version'],
+            'homepage': data['homepage'],
+            'description': data['description'],
+            'license': data['license'],
+        }
 
 
 def load_config():
