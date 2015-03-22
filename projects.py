@@ -16,7 +16,7 @@ try:
 except ImportError:
     Cheesecake = None
 
-SOURCES = ['github', 'gitorious', 'local', 'pypi', 'bower']
+SOURCES = ['github', 'gitorious', 'local', 'pypi', 'bower', 'travis']
 
 KEYS = [
     'name',
@@ -27,6 +27,7 @@ KEYS = [
     'updated',
     'license',
     'language',
+    'tests',
     'commit_count',
     'file_count',
     'unstaged_files',
@@ -74,7 +75,7 @@ class Claims(object):
 
 
 class ClaimsDict(object):
-    def __init__(self, keys, short=8):
+    def __init__(self, keys, short=9):
         self._keys = keys
         self._short = short
         self._data = {}
@@ -274,6 +275,16 @@ def get_bower(name):
             'description': data.get('description'),
             'license': data.get('license'),
         }
+
+
+def get_travis(url):
+    api_url = re.sub(
+        'https?://travis-ci.org', 'https://api.travis-ci.org/repos', url)
+    data = get_json(api_url)
+    return {
+        'description': data['description'],
+        'tests': data['last_build_result'] == 0,
+    }
 
 
 def load_config():
