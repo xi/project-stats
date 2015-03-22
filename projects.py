@@ -281,7 +281,7 @@ def load_config():
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('project', nargs='?')
+    parser.add_argument('query', nargs='?', help='optionally filter projects')
     parser.add_argument(
         '-l', '--list',
         action='store_true',
@@ -292,7 +292,8 @@ def parse_args():
         help='show only basic stats')
     parser.add_argument(
         '-S', '--show-sources',
-        action='store_true')
+        action='store_true',
+        help='show a source for each claim')
 
     return parser.parse_args()
 
@@ -302,8 +303,8 @@ def main():
     config = load_config()
 
     keys = config['projects'].keys()
-    if args.project is not None:
-        keys = filter(lambda k: args.project.lower() in k.lower(), keys)
+    if args.query is not None:
+        keys = filter(lambda k: args.query.lower() in k.lower(), keys)
 
     if args.list:
         for key in keys:
