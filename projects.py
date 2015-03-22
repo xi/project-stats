@@ -230,9 +230,9 @@ def get_local(path):
             return max(tags, key=lambda tag: tag.lstrip('v'))
 
     def get_rev_datetime(rev):
-        return git('show', '-s', '--format=%ai').rstrip()
+        return git('show', '-s', '--format=%ai', rev).rstrip()
 
-    tail = git('rev-list', 'HEAD').splitlines()[0]
+    tail = git('rev-list', 'HEAD').splitlines()[-1]
 
     return {
         'name': os.path.basename(path.rstrip('/')),
