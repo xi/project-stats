@@ -11,10 +11,10 @@ import os
 import re
 import subprocess
 
+from dateutil import parser as dt
 from filecachetools import ttl_cache
 import requests
 import yaml
-from dateutil import parser as dt
 
 try:
     from cheesecake.cheesecake_index import Cheesecake
