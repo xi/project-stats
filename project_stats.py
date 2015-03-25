@@ -376,11 +376,6 @@ def main():
     args = parse_args()
     config = load_config(os.path.expanduser(args.config))
 
-    cheesecake_index.cache_clear()
-    get_bower_info.cache_clear()
-    get_json.cache_clear()
-    get_xml.cache_clear()
-
     keys = config['projects'].keys()
     if args.query is not None:
         keys = filter(lambda k: args.query.lower() in k.lower(), keys)

@@ -12,7 +12,7 @@ setup(
     py_modules=['project_stats'],
     install_requires=[
         'python-dateutil',
-        'filecachetools',
+        'filecachetools>=0.1.0',
         'requests',
         'pyyaml',
     ],
