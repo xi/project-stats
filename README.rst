@@ -12,7 +12,11 @@ installation
 configuration
 -------------
 
-See sample.yml
+See ``sample.yml``.
+
+The configuration is expected in ``./projects.yml``, ``./.projects.yml``,
+``~/.config/projects.yml``, or ``~/.projects.yml``. The path can also be
+explicitly specified with ``-c``/``--config``.
 
 command line arguments
 ----------------------
