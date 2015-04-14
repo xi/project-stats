@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 
 from dateutil import parser as dt
 from filecachetools import ttl_cache
@@ -319,6 +320,25 @@ def get_travis(url):
     }
 
 
+def select_config(args):
+    if args.config is not None:
+        return os.path.expanduser(args.config)
+    else:
+        choices = [
+            os.path.abspath('./projects.yml'),
+            os.path.abspath('./.projects.yml'),
+            os.path.expanduser('~/.config/projects.yml'),
+            os.path.expanduser('~/.projects.yml'),
+        ]
+
+        for path in choices:
+            if os.path.exists(path):
+                return path
+
+        print('No config file available. Tried %s.' % ', '.join(choices))
+        sys.exit(1)
+
+
 def load_config(path):
     with open(path) as fh:
         return yaml.load(fh)
@@ -335,9 +355,7 @@ def parse_args():
         '-s', '--short',
         action='store_true',
         help='show only basic stats')
-    parser.add_argument(
-        '-c', '--config',
-        default='projects.yml')
+    parser.add_argument('-c', '--config')
     parser.add_argument(
         '-z', '--sort',
         help='sort by key')
@@ -374,7 +392,7 @@ def get_projects(projects_config):
 
 def main():
     args = parse_args()
-    config = load_config(os.path.expanduser(args.config))
+    config = load_config(select_config(args))
 
     keys = config['projects'].keys()
     if args.query is not None:
