@@ -7,6 +7,7 @@ from xml.etree import ElementTree
 import argparse
 import json
 import logging
+import multiprocessing
 import os
 import re
 import subprocess
@@ -367,26 +368,34 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_projects(projects_config):
-    projects = {}
-    for key, config in projects_config.items():
-        try:
-            claims = ClaimsDict(KEYS)
-            for source in SOURCES:
-                if source in config:
-                    fn = globals()['get_' + source]
-                    if source == 'github':
-                        data = fn(
-                            config[source],
-                            user=r_get(config, 'github', 'user'),
-                            password=r_get(config, 'github', 'password'))
-                    else:
-                        data = fn(config[source])
-                    claims.update(data, source)
+def get_project(args):
+    key, config = args
+    try:
+        claims = ClaimsDict(KEYS)
+        for source in SOURCES:
+            if source in config:
+                fn = globals()['get_' + source]
+                if source == 'github':
+                    data = fn(
+                        config[source],
+                        user=r_get(config, 'github', 'user'),
+                        password=r_get(config, 'github', 'password'))
+                else:
+                    data = fn(config[source])
+                claims.update(data, source)
+        return claims
+    except Exception as e:
+        logging.error('Error while gathering stats for %s: %s', key, e)
 
-            projects[key] = claims
-        except Exception as e:
-            logging.error('Error while gathering stats for %s: %s', key, e)
+
+def get_projects(projects_config):
+    pool = multiprocessing.Pool()
+    projects_list = pool.map(get_project, projects_config.items())
+
+    projects = {}
+    for key, project in zip(projects_config.keys(), projects_list):
+        if project is not None:
+            projects[key] = project
     return projects
 
 
