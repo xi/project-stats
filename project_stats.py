@@ -389,7 +389,8 @@ def get_project(args):
 
 
 def get_projects(projects_config):
-    projects_list = map(get_project, projects_config.items())
+    pool = multiprocessing.Pool()
+    projects_list = pool.map(get_project, projects_config.items())
     return dict(zip(projects_config.keys(), projects_list))
 
 
