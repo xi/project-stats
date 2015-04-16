@@ -391,7 +391,12 @@ def get_project(args):
 def get_projects(projects_config):
     pool = multiprocessing.Pool()
     projects_list = pool.map(get_project, projects_config.items())
-    return dict(zip(projects_config.keys(), projects_list))
+
+    projects = {}
+    for key, project in zip(projects_config.keys(), projects_list):
+        if project is not None:
+            projects[key] = project
+    return projects
 
 
 def main():
