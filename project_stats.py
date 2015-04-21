@@ -370,10 +370,10 @@ def parse_args():
 
 def get_project(args):
     key, config = args
-    try:
-        claims = ClaimsDict(KEYS)
-        for source in SOURCES:
-            if source in config:
+    claims = ClaimsDict(KEYS)
+    for source in SOURCES:
+        if source in config:
+            try:
                 fn = globals()['get_' + source]
                 if source == 'github':
                     data = fn(
@@ -383,9 +383,10 @@ def get_project(args):
                 else:
                     data = fn(config[source])
                 claims.update(data, source)
-        return claims
-    except Exception as e:
-        logging.error('Error while gathering stats for %s: %s', key, e)
+            except Exception as e:
+                message = 'Error while gathering stats for %s from %s: %s',
+                logging.error(message, key, source, e)
+    return claims
 
 
 def get_projects(projects_config):
