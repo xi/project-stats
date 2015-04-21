@@ -1,3 +1,9 @@
+0.2.1 (2015-04-21)
+------------------
+
+-	fail on inidividual sources, not whole projects
+
+
 0.2.0 (2015-04-16)
 ------------------
 
