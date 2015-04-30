@@ -391,7 +391,10 @@ def get_project(args):
 
 def get_projects(projects_config):
     pool = multiprocessing.Pool()
-    projects_list = pool.map(get_project, projects_config.items())
+    # HACK to get KeyboardInterrupt to work.
+    # See https://stackoverflow.com/questions/1408356
+    pool_map = lambda a, b: pool.map_async(a, b).get(99999)
+    projects_list = pool_map(get_project, projects_config.items())
 
     projects = {}
     for key, project in zip(projects_config.keys(), projects_list):
