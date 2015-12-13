@@ -1,3 +1,12 @@
+0.3.0 (2015-12-13)
+------------------
+
+-	fix github authentication
+-	drop support for gitorious.
+-	add support for gitlab
+-	add ``--version`` CLI flag
+
+
 0.2.1 (2015-04-21)
 ------------------
 
