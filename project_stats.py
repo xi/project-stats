@@ -23,7 +23,7 @@ try:
 except ImportError:
     Cheesecake = None
 
-SOURCES = ['github', 'gitorious', 'local', 'pypi', 'bower', 'travis']
+SOURCES = ['github', 'gitorious', 'gitlab', 'local', 'pypi', 'bower', 'travis']
 
 KEYS = [
     'name',
@@ -255,6 +255,23 @@ def get_gitorious(url):
     }
 
 
+def get_gitlab(_id, token=None):
+    api_url = 'https://gitlab.com/api/v3/projects/' + _id
+    if token is not None:
+        api_url += '?private_token=' + token
+    data = get_json(api_url)
+
+    return {
+        'name': data['name'],
+        'description': data['description'],
+        'homepage': data['web_url'],
+        'created': dt.parse(data['created_at']),
+        'updated': dt.parse(data['last_activity_at']),
+        'forks_count': data['forks_count'],
+        'watchers_count': data['star_count'],
+    }
+
+
 def get_local(path):
     def git(cmd, *args):
         return subprocess.check_output(['git', '-C', path, cmd] + list(args))
@@ -381,6 +398,10 @@ def get_project(args):
                         project[source],
                         user=r_get(config, 'github', 'user'),
                         password=r_get(config, 'github', 'password'))
+                elif source == 'gitlab':
+                    data = fn(
+                        project[source],
+                        token=r_get(config, 'gitlab', 'token'))
                 else:
                     data = fn(project[source])
                 claims.update(data, source)
