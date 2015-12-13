@@ -3,7 +3,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from functools import total_ordering
-from xml.etree import ElementTree
 import argparse
 import json
 import logging
@@ -23,7 +22,7 @@ try:
 except ImportError:
     Cheesecake = None
 
-SOURCES = ['github', 'gitorious', 'gitlab', 'local', 'pypi', 'bower', 'travis']
+SOURCES = ['github', 'gitlab', 'local', 'pypi', 'bower', 'travis']
 
 KEYS = [
     'name',
@@ -187,12 +186,6 @@ def get_json(url, user=None, password=None):
     return req.json()
 
 
-@ttl_cache('xi-projects', ttl=3600)
-def get_xml(url):
-    req = requests.get(url)
-    return ElementTree.fromstring(req.content)
-
-
 def get_github(url, user=None, password=None):
     def _get_json(url):
         data = get_json(url, user=user, password=password)
@@ -240,18 +233,6 @@ def get_github(url, user=None, password=None):
         'open_issues': data['open_issues'],
         'open_pull_requests': get_open_pull_requests(),
         'version': get_latest_tag(),
-    }
-
-
-def get_gitorious(url):
-    api_url = url.rstrip('/') + '.xml'
-    data = get_xml(api_url)
-
-    return {
-        'description': data.find('description').text,
-        'name': data.find('name').text,
-        'created': dt.parse(data.find('created-at').text),
-        'updated': dt.parse(data.find('last-pushed-at').text),
     }
 
 
