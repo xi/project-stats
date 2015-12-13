@@ -359,6 +359,7 @@ def parse_args():
     parser.add_argument('-c', '--config')
     parser.add_argument(
         '-z', '--sort',
+        metavar='KEY',
         help='sort by key')
     parser.add_argument(
         '-S', '--show-sources',
