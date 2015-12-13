@@ -237,10 +237,18 @@ def get_github(url, user=None, password=None):
 
 
 def get_gitlab(_id, token=None):
-    api_url = 'https://gitlab.com/api/v3/projects/' + _id
-    if token is not None:
-        api_url += '?private_token=' + token
-    data = get_json(api_url)
+    def _get_json(path):
+        api_url = 'https://gitlab.com/api/v3/projects/' + _id + path
+        if token is not None:
+            if '?' in api_url:
+                api_url += '&private_token=' + token
+            else:
+                api_url += '?private_token=' + token
+        return get_json(api_url)
+
+    data = _get_json('')
+    issues = _get_json('/issues?state=opened')
+    pulls = _get_json('/merge_requests?state=opened')
 
     return {
         'name': data['name'],
@@ -250,6 +258,8 @@ def get_gitlab(_id, token=None):
         'updated': dt.parse(data['last_activity_at']),
         'forks_count': data['forks_count'],
         'watchers_count': data['star_count'],
+        'open_issues': len(issues),
+        'open_pull_requests': len(pulls),
     }
 
 
