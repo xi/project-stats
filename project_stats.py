@@ -22,6 +22,8 @@ try:
 except ImportError:
     Cheesecake = None
 
+__version__ = '0.2.1'
+
 SOURCES = ['github', 'gitlab', 'local', 'pypi', 'bower', 'travis']
 
 KEYS = [
@@ -356,6 +358,7 @@ def load_config(path):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('query', nargs='?', help='optionally filter projects')
+    parser.add_argument('--version', action='version', version=__version__)
     parser.add_argument(
         '-l', '--list',
         action='store_true',

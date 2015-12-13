@@ -1,11 +1,20 @@
 from setuptools import setup
+import os
+import re
+
+DIRNAME = os.path.abspath(os.path.dirname(__file__))
+rel = lambda *parts: os.path.abspath(os.path.join(DIRNAME, *parts))
+
+README = open(rel('README.rst')).read()
+MAIN = open(rel('project_stats.py')).read()
+VERSION = re.search("__version__ = '([^']+)'", MAIN).group(1)
 
 
 setup(
     name='project-stats',
-    version='0.2.1',
+    version=VERSION,
     description='keep track of all your projects',
-    long_description=open('README.rst').read(),
+    long_description=README,
     url='https://github.com/xi/project-stats',
     author='Tobias Bengfort',
     author_email='tobias.bengfort@posteo.de',
