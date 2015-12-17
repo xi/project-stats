@@ -195,23 +195,12 @@ def get_github(url, user=None, password=None):
             raise requests.HTTPError(data['documentation_url'])
         return data
 
-    def get_all_pages(url):
-        l = []
-        new = True
-        page = 1
-        while new:
-            u = url + '?page=%i' % page
-            new = _get_json(u)
-            l += new
-            page += 1
-        return l
-
     api_url = re.sub(
         'https?://github.com', 'https://api.github.com/repos', url)
     data = _get_json(api_url)
 
     def get_latest_tag():
-        tags = get_all_pages(data['tags_url'])
+        tags = _get_json(data['tags_url'] + '?per_page=100')
         tags = [tag['name'] for tag in tags]
         if len(tags) > 0:
             return max(tags, key=lambda tag: tag.lstrip('v'))
