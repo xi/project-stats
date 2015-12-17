@@ -13,7 +13,6 @@ import subprocess
 import sys
 
 from dateutil import parser as dt
-from filecachetools import ttl_cache
 import requests
 import yaml
 
@@ -140,7 +139,6 @@ class ClaimsDict(object):
         return '\n'.join(lines)
 
 
-@ttl_cache('xi-projects-cheesecake', ttl=3600)
 def cheesecake_index(name):
     if Cheesecake is not None:
         # does not seem to be meant to be used as a library
@@ -153,7 +151,6 @@ def cheesecake_index(name):
         return None
 
 
-@ttl_cache('xi-projects-bower', ttl=3600)
 def get_bower_info(name):
     try:
         s = subprocess.check_output(['bower', 'info', name])
@@ -174,7 +171,6 @@ def get_bower_info(name):
     return json.loads(s)
 
 
-@ttl_cache('xi-projects', ttl=3600)
 def get_json(url, user=None, password=None):
     assert not (user is None) ^ (password is None)
 
