@@ -417,26 +417,27 @@ def main():
     if args.query is not None:
         keys = filter(lambda k: args.query.lower() in k.lower(), keys)
 
-    projects_config = {key: config['projects'][key] for key in keys}
-    projects = get_projects(projects_config, config)
-    keys = filter(lambda k: k in projects, keys)
+    if args.list and args.sort is None:
+        for key in keys:
+            print(key)
+    else:
+        projects_config = {key: config['projects'][key] for key in keys}
+        projects = get_projects(projects_config, config)
+        keys = filter(lambda k: k in projects, keys)
 
-    if args.sort is not None:
-        keys.sort(key=lambda k: projects[k][args.sort])
+        if args.sort is not None:
+            keys.sort(key=lambda k: projects[k][args.sort])
 
-    for key in keys:
-        if args.list:
-            if args.sort is not None:
+        for key in keys:
+            if args.list:
                 claim = projects[key][args.sort]
                 print(key, claim.format(show_sources=False))
             else:
-                print(key)
-        else:
-            claims = projects[key]
-            print('%s\n%s\n' % (key, claims.format(
-                indent=2,
-                short=args.short,
-                show_sources=args.show_sources)))
+                claims = projects[key]
+                print('%s\n%s\n' % (key, claims.format(
+                    indent=2,
+                    short=args.short,
+                    show_sources=args.show_sources)))
 
 
 if __name__ == '__main__':
