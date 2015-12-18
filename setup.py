@@ -35,7 +35,7 @@ setup(
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
-        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
         'License :: OSI Approved :: GNU General Public License v2 or later '
             '(GPLv2+)',
         'Topic :: Utilities',
