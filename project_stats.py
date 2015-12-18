@@ -317,6 +317,46 @@ def get_travis(url):
     }
 
 
+def get_project(args):
+    key, project, config = args
+    claims = ClaimsDict(KEYS)
+    for source in SOURCES:
+        if source in project:
+            try:
+                fn = globals()['get_' + source]
+                if source == 'github':
+                    data = fn(
+                        project[source],
+                        user=r_get(config, 'github', 'user'),
+                        password=r_get(config, 'github', 'password'))
+                elif source == 'gitlab':
+                    data = fn(
+                        project[source],
+                        token=r_get(config, 'gitlab', 'token'))
+                else:
+                    data = fn(project[source])
+                claims.update(data, source)
+            except Exception as e:
+                message = 'Error while gathering stats for %s from %s: %s',
+                logging.error(message, key, source, e)
+    return claims
+
+
+def get_projects(projects_config, config):
+    pool = multiprocessing.Pool()
+    # HACK to get KeyboardInterrupt to work.
+    # See https://stackoverflow.com/questions/1408356
+    pool_map = lambda a, b: pool.map_async(a, b).get(99999)
+    args = ((key, project, config) for key, project in projects_config.items())
+    projects_list = pool_map(get_project, args)
+
+    projects = {}
+    for key, project in zip(projects_config.keys(), projects_list):
+        if project is not None:
+            projects[key] = project
+    return projects
+
+
 def select_config(args):
     if args.config is not None:
         return os.path.expanduser(args.config)
@@ -364,46 +404,6 @@ def parse_args():
         help='show a source for each claim')
 
     return parser.parse_args()
-
-
-def get_project(args):
-    key, project, config = args
-    claims = ClaimsDict(KEYS)
-    for source in SOURCES:
-        if source in project:
-            try:
-                fn = globals()['get_' + source]
-                if source == 'github':
-                    data = fn(
-                        project[source],
-                        user=r_get(config, 'github', 'user'),
-                        password=r_get(config, 'github', 'password'))
-                elif source == 'gitlab':
-                    data = fn(
-                        project[source],
-                        token=r_get(config, 'gitlab', 'token'))
-                else:
-                    data = fn(project[source])
-                claims.update(data, source)
-            except Exception as e:
-                message = 'Error while gathering stats for %s from %s: %s',
-                logging.error(message, key, source, e)
-    return claims
-
-
-def get_projects(projects_config, config):
-    pool = multiprocessing.Pool()
-    # HACK to get KeyboardInterrupt to work.
-    # See https://stackoverflow.com/questions/1408356
-    pool_map = lambda a, b: pool.map_async(a, b).get(99999)
-    args = ((key, project, config) for key, project in projects_config.items())
-    projects_list = pool_map(get_project, args)
-
-    projects = {}
-    for key, project in zip(projects_config.keys(), projects_list):
-        if project is not None:
-            projects[key] = project
-    return projects
 
 
 def main():
