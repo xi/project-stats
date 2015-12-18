@@ -153,7 +153,7 @@ def cheesecake_index(name):
 
 def get_bower_info(name):
     try:
-        s = subprocess.check_output(['bower', 'info', name])
+        s = subprocess.check_output(['bower', 'info', name]).decode('utf8')
     except OSError:
         return None
 
@@ -252,7 +252,8 @@ def get_gitlab(_id, token=None):
 
 def get_local(path):
     def git(cmd, *args):
-        return subprocess.check_output(['git', '-C', path, cmd] + list(args))
+        _cmd = ['git', '-C', path, cmd] + list(args)
+        return subprocess.check_output(_cmd).decode('utf8')
 
     def get_latest_tag():
         tags = git('tag').splitlines()
@@ -411,7 +412,7 @@ def main():
 
     keys = config['projects'].keys()
     if args.query is not None:
-        keys = filter(lambda k: args.query.lower() in k.lower(), keys)
+        keys = [k for k in keys if args.query.lower() in k.lower()]
 
     if args.list and args.sort is None:
         for key in keys:
@@ -419,7 +420,7 @@ def main():
     else:
         projects_config = {key: config['projects'][key] for key in keys}
         projects = get_projects(projects_config, config)
-        keys = filter(lambda k: k in projects, keys)
+        keys = [k for k in keys if k in projects]
 
         if args.sort is not None:
             keys.sort(key=lambda k: projects[k][args.sort])
