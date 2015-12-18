@@ -21,7 +21,6 @@ setup(
     py_modules=['project_stats'],
     install_requires=[
         'python-dateutil',
-        'requests',
         'pyyaml',
     ],
     extras_require={

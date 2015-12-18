@@ -4,16 +4,16 @@ from __future__ import unicode_literals
 
 from functools import total_ordering
 import argparse
+import asyncio
 import json
 import logging
-import multiprocessing
 import os
 import re
 import subprocess
 import sys
 
 from dateutil import parser as dt
-import requests
+import aiohttp
 import yaml
 
 try:
@@ -50,6 +50,21 @@ KEYS = [
     'watchers_count',
     'cheesecake_index',
 ]
+
+
+def aiorun(future):
+    """Return value of a future synchronously."""
+    container = []
+
+    @asyncio.coroutine
+    def wrapper():
+        result = yield from future
+        container.append(result)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(wrapper())
+
+    return container[0]
 
 
 def r_get(d, *keys):
@@ -151,11 +166,16 @@ def cheesecake_index(name):
         return None
 
 
+@asyncio.coroutine
 def get_bower_info(name):
-    try:
-        s = subprocess.check_output(['bower', 'info', name]).decode('utf8')
-    except OSError:
-        return None
+    process = yield from asyncio.create_subprocess_exec(
+        'bower', 'info', name,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = yield from process.communicate()
+    if process.returncode != 0:
+        return
+    s = stdout.decode('utf8')
 
     # re handles \n specially, so it is replaced by \t
     s = '\t'.join(s.splitlines())
@@ -171,40 +191,50 @@ def get_bower_info(name):
     return json.loads(s)
 
 
+@asyncio.coroutine
 def get_json(url, user=None, password=None):
     assert not (user is None) ^ (password is None)
 
     if user is None:
-        req = requests.get(url)
+        req = yield from aiohttp.get(url)
     else:
-        req = requests.get(
-            url, auth=requests.auth.HTTPBasicAuth(user, password))
+        req = yield from aiohttp.get(
+            url, auth=aiohttp.BasicAuth(user, password))
 
-    req.raise_for_status()
-    return req.json()
+    data = yield from req.json()
+    return data
 
 
+@asyncio.coroutine
 def get_github(url, user=None, password=None):
+    api_url = re.sub(
+        'https?://github.com', 'https://api.github.com/repos', url)
+
+    @asyncio.coroutine
     def _get_json(url):
-        data = get_json(url, user=user, password=password)
+        data = yield from get_json(url, user=user, password=password)
         if 'documentation_url' in data:
             raise requests.HTTPError(data['documentation_url'])
         return data
 
-    api_url = re.sub(
-        'https?://github.com', 'https://api.github.com/repos', url)
-    data = _get_json(api_url)
-
+    @asyncio.coroutine
     def get_latest_tag():
-        tags = _get_json(data['tags_url'] + '?per_page=100')
-        tags = [tag['name'] for tag in tags]
+        data = yield from _get_json(api_url + '/tags?per_page=100')
+        tags = [tag['name'] for tag in data]
         if len(tags) > 0:
             return max(tags, key=lambda tag: tag.lstrip('v'))
+        else:
+            return
 
+    @asyncio.coroutine
     def get_open_pull_requests():
-        url = data['pulls_url'].replace('{/number}', '')
-        pulls = _get_json(url)
-        return len(pulls)
+        data = yield from _get_json(api_url + '/pulls')
+        return len(data)
+
+    data, version, pulls = yield from asyncio.gather(
+        _get_json(api_url),
+        get_latest_tag(),
+        get_open_pull_requests())
 
     return {
         'name': data['name'],
@@ -218,12 +248,14 @@ def get_github(url, user=None, password=None):
         'subscribers_count': data['subscribers_count'],
         'forks_count': data['forks_count'],
         'open_issues': data['open_issues'],
-        'open_pull_requests': get_open_pull_requests(),
-        'version': get_latest_tag(),
+        'open_pull_requests': pulls,
+        'version': version,
     }
 
 
+@asyncio.coroutine
 def get_gitlab(_id, token=None):
+    @asyncio.coroutine
     def _get_json(path):
         api_url = 'https://gitlab.com/api/v3/projects/' + _id + path
         if token is not None:
@@ -233,9 +265,10 @@ def get_gitlab(_id, token=None):
                 api_url += '?private_token=' + token
         return get_json(api_url)
 
-    data = _get_json('')
-    issues = _get_json('/issues?state=opened')
-    pulls = _get_json('/merge_requests?state=opened')
+    data, issues, pulls = yield from asyncio.gather(
+        _get_json(''),
+        _get_json('/issues?state=opened'),
+        _get_json('/merge_requests?state=opened'))
 
     return {
         'name': data['name'],
@@ -250,6 +283,7 @@ def get_gitlab(_id, token=None):
     }
 
 
+@asyncio.coroutine
 def get_local(path):
     def git(cmd, *args):
         _cmd = ['git', '-C', path, cmd] + list(args)
@@ -279,9 +313,9 @@ def get_local(path):
     }
 
 
+@asyncio.coroutine
 def get_pypi(url):
-    data = get_json(url + '/json')
-
+    data = yield from get_json(url + '/json')
     return {
         'version': data['info']['version'],
         'description': data['info']['summary'],
@@ -293,8 +327,9 @@ def get_pypi(url):
     }
 
 
+@asyncio.coroutine
 def get_bower(name):
-    data = get_bower_info(name)
+    data = yield from get_bower_info(name)
     if data is None:
         return {}
     else:
@@ -307,48 +342,53 @@ def get_bower(name):
         }
 
 
+@asyncio.coroutine
 def get_travis(url):
     api_url = re.sub(
         'https?://travis-ci.org', 'https://api.travis-ci.org/repos', url)
-    data = get_json(api_url)
+    data = yield from get_json(api_url)
     return {
         'description': data['description'],
         'tests': data['last_build_result'] == 0,
     }
 
 
-def get_project(args):
-    key, project, config = args
+@asyncio.coroutine
+def get_source(key, source, config, claims):
+    fn = globals()['get_' + key]
+    if key == 'github':
+        future = fn(
+            source,
+            user=r_get(config, 'github', 'user'),
+            password=r_get(config, 'github', 'password'))
+    elif key == 'gitlab':
+        future = fn(source, token=r_get(config, 'gitlab', 'token'))
+    else:
+        future = fn(source)
+
+    try:
+        data = yield from future
+        claims.update(data, key)
+    except Exception as e:
+        message = 'Error while gathering stats for %s from %s: %s',
+        logging.error(message, key, source, e)
+
+
+@asyncio.coroutine
+def get_project(key, project, config):
     claims = ClaimsDict(KEYS)
+    futures = []
     for source in SOURCES:
         if source in project:
-            try:
-                fn = globals()['get_' + source]
-                if source == 'github':
-                    data = fn(
-                        project[source],
-                        user=r_get(config, 'github', 'user'),
-                        password=r_get(config, 'github', 'password'))
-                elif source == 'gitlab':
-                    data = fn(
-                        project[source],
-                        token=r_get(config, 'gitlab', 'token'))
-                else:
-                    data = fn(project[source])
-                claims.update(data, source)
-            except Exception as e:
-                message = 'Error while gathering stats for %s from %s: %s',
-                logging.error(message, key, source, e)
+            futures.append(get_source(source, project[source], config, claims))
+    yield from asyncio.gather(*futures)
     return claims
 
 
 def get_projects(projects_config, config):
-    pool = multiprocessing.Pool()
-    # HACK to get KeyboardInterrupt to work.
-    # See https://stackoverflow.com/questions/1408356
-    pool_map = lambda a, b: pool.map_async(a, b).get(99999)
-    args = ((key, project, config) for key, project in projects_config.items())
-    projects_list = pool_map(get_project, args)
+    projects_list = aiorun(asyncio.gather(*[
+        get_project(key, project, config)
+        for key, project in projects_config.items()]))
 
     projects = {}
     for key, project in zip(projects_config.keys(), projects_list):
