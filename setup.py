@@ -22,6 +22,7 @@ setup(
     install_requires=[
         'python-dateutil',
         'pyyaml',
+        'rediscache',
     ],
     extras_require={
         'cheesecake': ['cheesecake'],
