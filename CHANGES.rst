@@ -1,6 +1,15 @@
 Changelog
 =========
 
+1.0.0 (2015-12-22)
+------------------
+
+-  drop support for python2
+-  use aiohttp instead of urllib
+-  use asyncio instead of multiprocessing
+-  use rediscache instead of filecachetools
+
+
 0.3.0 (2015-12-13)
 ------------------
 

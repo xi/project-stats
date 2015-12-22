@@ -18,7 +18,7 @@ try:
 except ImportError:
     Cheesecake = None
 
-__version__ = '0.3.0'
+__version__ = '1.0.0'
 
 SOURCES = ['github', 'gitlab', 'local', 'pypi', 'bower', 'travis']
 
