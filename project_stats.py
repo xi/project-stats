@@ -418,7 +418,7 @@ def select_config(args):
 
 def load_config(path):
     with open(path) as fh:
-        return yaml.load(fh)
+        return yaml.safe_load(fh)
 
 
 def parse_args():
