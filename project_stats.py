@@ -20,7 +20,7 @@ except ImportError:
 
 __version__ = '1.0.0'
 
-SOURCES = ['github', 'gitlab', 'local', 'pypi', 'bower', 'travis']
+SOURCES = ['github', 'gitlab', 'local', 'pypi', 'bower', 'npm', 'travis']
 
 KEYS = [
     'name',
@@ -340,6 +340,42 @@ def get_bower(name):
             'description': data.get('description'),
             'license': data.get('license'),
         }
+
+
+@async_cached('xi-project-npm', ttl=3600)
+@asyncio.coroutine
+def get_npm(name):
+    process = yield from asyncio.create_subprocess_exec(
+        'npm', 'view', name,
+        'name',
+        'version',
+        'homepage',
+        'description',
+        'license',
+        'time.created',
+        'time.modified',
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = yield from process.communicate()
+    if process.returncode != 0:
+        return
+    s = stdout.decode('utf8')
+
+    data = {}
+    for line in s.splitlines():
+        m = re.match("(.*) = '(.*)'", line)
+        if m:
+            key = m.groups()[0]
+            value = m.groups()[1]
+
+            if key == 'time.created':
+                data['created'] = dt.parse(value)
+            elif key == 'time.modified':
+                data['updated'] = dt.parse(value)
+            else:
+                data[key] = value
+
+    return data
 
 
 @asyncio.coroutine
