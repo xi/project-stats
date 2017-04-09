@@ -214,7 +214,7 @@ def get_github(url, user=None, password=None):
     def _get_json(url):
         data = yield from get_json(url, user=user, password=password)
         if 'documentation_url' in data:
-            raise requests.HTTPError(data['documentation_url'])
+            raise aiohttp.ClientError(data['documentation_url'])
         return data
 
     @asyncio.coroutine
