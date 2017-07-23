@@ -162,24 +162,25 @@ def cheesecake_index(name):
         return None
 
 
-async def get_json(url, user=None, password=None):
-    assert not (user is None) ^ (password is None)
+async def get_json(url, user=None, token=None):
+    assert not (user is None) ^ (token is None)
 
-    auth = None
     if user is not None:
-        auth=aiohttp.BasicAuth(user, password)
+        # FIXME: not very robust
+        url += '&' if '?' in url else '?'
+        url += 'login=%s&token=%s' % (user, token)
 
-    async with aiohttp.ClientSession(auth=auth) as session:
+    async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             return await resp.json()
 
 
-async def get_github(url, user=None, password=None):
+async def get_github(url, user=None, token=None):
     api_url = re.sub(
         'https?://github.com', 'https://api.github.com/repos', url)
 
     async def _get_json(url):
-        data = await get_json(url, user=user, password=password)
+        data = await get_json(url, user=user, token=token)
         if 'documentation_url' in data:
             raise aiohttp.ClientError(data['documentation_url'])
         return data
@@ -338,7 +339,7 @@ async def get_source(key, source, config, claims):
         future = fn(
             source,
             user=r_get(config, 'github', 'user'),
-            password=r_get(config, 'github', 'password'))
+            token=r_get(config, 'github', 'token'))
     elif key == 'gitlab':
         future = fn(source, token=r_get(config, 'gitlab', 'token'))
     else:
