@@ -162,47 +162,41 @@ def cheesecake_index(name):
         return None
 
 
-@asyncio.coroutine
-def get_json(url, user=None, password=None):
+async def get_json(url, user=None, password=None):
     assert not (user is None) ^ (password is None)
 
-    if user is None:
-        req = yield from aiohttp.get(url)
-    else:
-        req = yield from aiohttp.get(
-            url, auth=aiohttp.BasicAuth(user, password))
+    auth = None
+    if user is not None:
+        auth=aiohttp.BasicAuth(user, password)
 
-    data = yield from req.json()
-    return data
+    async with aiohttp.ClientSession(auth=auth) as session:
+        async with session.get(url) as resp:
+            return await resp.json()
 
 
-@asyncio.coroutine
-def get_github(url, user=None, password=None):
+async def get_github(url, user=None, password=None):
     api_url = re.sub(
         'https?://github.com', 'https://api.github.com/repos', url)
 
-    @asyncio.coroutine
-    def _get_json(url):
-        data = yield from get_json(url, user=user, password=password)
+    async def _get_json(url):
+        data = await get_json(url, user=user, password=password)
         if 'documentation_url' in data:
             raise aiohttp.ClientError(data['documentation_url'])
         return data
 
-    @asyncio.coroutine
-    def get_latest_tag():
-        data = yield from _get_json(api_url + '/tags?per_page=100')
+    async def get_latest_tag():
+        data = await _get_json(api_url + '/tags?per_page=100')
         tags = [tag['name'] for tag in data]
         if len(tags) > 0:
             return max(tags, key=lambda tag: tag.lstrip('v'))
         else:
             return
 
-    @asyncio.coroutine
-    def get_open_pull_requests():
-        data = yield from _get_json(api_url + '/pulls')
+    async def get_open_pull_requests():
+        data = await _get_json(api_url + '/pulls')
         return len(data)
 
-    data, version, pulls = yield from asyncio.gather(
+    data, version, pulls = await asyncio.gather(
         _get_json(api_url),
         get_latest_tag(),
         get_open_pull_requests())
@@ -224,19 +218,17 @@ def get_github(url, user=None, password=None):
     }
 
 
-@asyncio.coroutine
-def get_gitlab(_id, token=None):
-    @asyncio.coroutine
-    def _get_json(path):
+async def get_gitlab(_id, token=None):
+    async def _get_json(path):
         api_url = 'https://gitlab.com/api/v3/projects/' + _id + path
         if token is not None:
             if '?' in api_url:
                 api_url += '&private_token=' + token
             else:
                 api_url += '?private_token=' + token
-        return get_json(api_url)
+        return await get_json(api_url)
 
-    data, issues, pulls = yield from asyncio.gather(
+    data, issues, pulls = await asyncio.gather(
         _get_json(''),
         _get_json('/issues?state=opened'),
         _get_json('/merge_requests?state=opened'))
@@ -254,8 +246,7 @@ def get_gitlab(_id, token=None):
     }
 
 
-@asyncio.coroutine
-def get_local(path):
+async def get_local(path):
     def git(cmd, *args):
         _cmd = ['git', '-C', path, cmd] + list(args)
         return subprocess.check_output(_cmd).decode('utf8')
@@ -284,9 +275,8 @@ def get_local(path):
     }
 
 
-@asyncio.coroutine
-def get_pypi(url):
-    data = yield from get_json(url + '/json')
+async def get_pypi(url):
+    data = await get_json(url + '/json')
     return {
         'version': data['info']['version'],
         'description': data['info']['summary'],
@@ -298,9 +288,8 @@ def get_pypi(url):
     }
 
 
-@asyncio.coroutine
-def get_npm(name):
-    process = yield from asyncio.create_subprocess_exec(
+async def get_npm(name):
+    process = await asyncio.create_subprocess_exec(
         'npm', 'view', name,
         'name',
         'version',
@@ -311,7 +300,7 @@ def get_npm(name):
         'time.modified',
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
-    stdout, stderr = yield from process.communicate()
+    stdout, stderr = await process.communicate()
     if process.returncode != 0:
         return
     s = stdout.decode('utf8')
@@ -333,19 +322,17 @@ def get_npm(name):
     return data
 
 
-@asyncio.coroutine
-def get_travis(url):
+async def get_travis(url):
     api_url = re.sub(
         'https?://travis-ci.org', 'https://api.travis-ci.org/repos', url)
-    data = yield from get_json(api_url)
+    data = await get_json(api_url)
     return {
         'description': data['description'],
         'tests': data['last_build_result'] == 0,
     }
 
 
-@asyncio.coroutine
-def get_source(key, source, config, claims):
+async def get_source(key, source, config, claims):
     fn = globals()['get_' + key]
     if key == 'github':
         future = fn(
@@ -358,21 +345,20 @@ def get_source(key, source, config, claims):
         future = fn(source)
 
     try:
-        data = yield from future
+        data = await future
         claims.update(data, key)
     except Exception as e:
         message = 'Error while gathering stats for %s from %s: %s',
         logging.error(message, key, source, e)
 
 
-@asyncio.coroutine
-def get_project(key, project, config):
+async def get_project(key, project, config):
     claims = ClaimsDict(KEYS)
     futures = []
     for source in SOURCES:
         if source in project:
             futures.append(get_source(source, project[source], config, claims))
-    yield from asyncio.gather(*futures)
+    await asyncio.gather(*futures)
     return claims
 
 

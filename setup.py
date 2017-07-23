@@ -20,7 +20,7 @@ setup(
     author_email='tobias.bengfort@posteo.de',
     py_modules=['project_stats'],
     install_requires=[
-        'aiohttp<2',
+        'aiohttp',
         'python-dateutil',
         'pyyaml',
     ],
