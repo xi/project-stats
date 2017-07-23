@@ -19,7 +19,7 @@ except ImportError:
 
 __version__ = '1.1.1'
 
-SOURCES = ['github', 'gitlab', 'local', 'pypi', 'bower', 'npm', 'travis']
+SOURCES = ['github', 'gitlab', 'local', 'pypi', 'npm', 'travis']
 
 KEYS = [
     'name',
@@ -163,31 +163,6 @@ def cheesecake_index(name):
 
 
 @asyncio.coroutine
-def get_bower_info(name):
-    process = yield from asyncio.create_subprocess_exec(
-        'bower', 'info', name,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
-    stdout, stderr = yield from process.communicate()
-    if process.returncode != 0:
-        return
-    s = stdout.decode('utf8')
-
-    # re handles \n specially, so it is replaced by \t
-    s = '\t'.join(s.splitlines())
-
-    # strip uninteresting information
-    s = re.sub('.*\t{', '{', s)
-    s = re.sub('\t}.*', '\t}', s)
-
-    # this is Javascript object syntax, not strict JSON
-    s = re.sub('\t( *)([a-z]*): ', '\t\\1"\\2": ', s)
-    s = s.replace('\'', '"')
-
-    return json.loads(s)
-
-
-@asyncio.coroutine
 def get_json(url, user=None, password=None):
     assert not (user is None) ^ (password is None)
 
@@ -321,21 +296,6 @@ def get_pypi(url):
         'homepage': data['info']['home_page'],
         'cheesecake_index': cheesecake_index(data['info']['name']),
     }
-
-
-@asyncio.coroutine
-def get_bower(name):
-    data = yield from get_bower_info(name)
-    if data is None:
-        return {}
-    else:
-        return {
-            'name': data['name'],
-            'version': data.get('version'),
-            'homepage': data.get('homepage'),
-            'description': data.get('description'),
-            'license': data.get('license'),
-        }
 
 
 @asyncio.coroutine
