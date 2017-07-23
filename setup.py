@@ -23,7 +23,6 @@ setup(
         'aiohttp<2',
         'python-dateutil',
         'pyyaml',
-        'rediscache',
     ],
     extras_require={
         'cheesecake': ['cheesecake'],

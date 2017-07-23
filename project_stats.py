@@ -9,7 +9,6 @@ import subprocess
 import sys
 
 from dateutil import parser as dt
-from rediscache import cached, async_cached
 import aiohttp
 import yaml
 
@@ -151,7 +150,6 @@ class ClaimsDict(object):
         return '\n'.join(lines)
 
 
-@cached('xi-project-cheesecake', ttl=36000)
 def cheesecake_index(name):
     if Cheesecake is not None:
         # does not seem to be meant to be used as a library
@@ -164,7 +162,6 @@ def cheesecake_index(name):
         return None
 
 
-@async_cached('xi-project-bower', ttl=3600)
 @asyncio.coroutine
 def get_bower_info(name):
     process = yield from asyncio.create_subprocess_exec(
@@ -190,7 +187,6 @@ def get_bower_info(name):
     return json.loads(s)
 
 
-@async_cached('xi-project', ttl=3600)
 @asyncio.coroutine
 def get_json(url, user=None, password=None):
     assert not (user is None) ^ (password is None)
@@ -342,7 +338,6 @@ def get_bower(name):
         }
 
 
-@async_cached('xi-project-npm', ttl=3600)
 @asyncio.coroutine
 def get_npm(name):
     process = yield from asyncio.create_subprocess_exec(
