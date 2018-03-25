@@ -1,7 +1,6 @@
 from functools import total_ordering
 import argparse
 import asyncio
-import json
 import logging
 import os
 import re
