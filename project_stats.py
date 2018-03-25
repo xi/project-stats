@@ -18,7 +18,7 @@ except ImportError:
 
 __version__ = '1.1.1'
 
-SOURCES = ['github', 'gitlab', 'local', 'pypi', 'npm', 'travis']
+SOURCES = ['github', 'gitlab', 'local', 'pypi', 'npm', 'travis', 'firefox']
 
 KEYS = [
     'name',
@@ -329,6 +329,26 @@ async def get_travis(url):
     return {
         'description': data['description'],
         'tests': data['last_build_result'] == 0,
+    }
+
+
+async def get_firefox(url):
+    def get_us(d, key):
+        return d.get(key, {}).get('en-US')
+
+    api_url = re.sub(
+        'mozilla.org/[^/]*/firefox', 'mozilla.org/api/v3/addons', url)
+    data = await get_json(api_url)
+
+    return {
+        'name': get_us(data, 'name'),
+        'description': get_us(data, 'summary'),
+        'version': data.get('current_version', {}).get('version'),
+        'homepage': get_us(data, 'homepage'),
+        'updated': data.get('last_updated'),
+        'license': get_us(data.get('current_version', {}), 'license'),
+        'downloads': data.get('weekly_downloads'),
+        'subscribers_count': data.get('average_daily_users'),
     }
 
 
