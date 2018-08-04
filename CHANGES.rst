@@ -1,6 +1,17 @@
 Changelog
 =========
 
+2.0.0 (2018-08-04)
+------------------
+
+-  remove support for bower
+-  add support for firefox addons
+-  use name instead of url for all services
+-  use token instead of password for github
+-  get license from github
+-  remove cache
+
+
 1.1.1 (2017-04-09)
 ------------------
 
