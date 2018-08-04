@@ -3,3 +3,8 @@ projects:
     local: .
     github: xi/project-stats
     pypi: project-stats
+github:
+  user: xi
+  token: SOMETOKEN
+gitlab:
+  token: SOMETOKEN
