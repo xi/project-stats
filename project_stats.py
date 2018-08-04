@@ -203,6 +203,7 @@ async def get_github(name, user=None, token=None):
     return {
         'name': data['name'],
         'description': data['description'],
+        'license': data.get('license', {}).get('spdx_id'),
         'created': dt.parse(data['created_at']),
         'updated': dt.parse(data['updated_at']),
         'homepage': data['homepage'],
