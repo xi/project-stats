@@ -1,5 +1,5 @@
 projects:
   projects:
     local: .
-    github: https://github.com/xi/project-stats
-    pypi: https://pypi.python.org/pypi/project-stats
+    github: xi/project-stats
+    pypi: project-stats

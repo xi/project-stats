@@ -174,9 +174,8 @@ async def get_json(url, user=None, token=None):
             return await resp.json()
 
 
-async def get_github(url, user=None, token=None):
-    api_url = re.sub(
-        'https?://github.com', 'https://api.github.com/repos', url)
+async def get_github(name, user=None, token=None):
+    api_url = 'https://api.github.com/repos/' + name
 
     async def _get_json(url):
         data = await get_json(url, user=user, token=token)
@@ -275,8 +274,8 @@ async def get_local(path):
     }
 
 
-async def get_pypi(url):
-    data = await get_json(url + '/json')
+async def get_pypi(name):
+    data = await get_json('https://pypi.org/pypi/{}/json'.format(name))
     return {
         'version': data['info']['version'],
         'description': data['info']['summary'],
@@ -322,22 +321,19 @@ async def get_npm(name):
     return data
 
 
-async def get_travis(url):
-    api_url = re.sub(
-        'https?://travis-ci.org', 'https://api.travis-ci.org/repos', url)
-    data = await get_json(api_url)
+async def get_travis(name):
+    data = await get_json('https://api.travis-ci.org/repos/' + name)
     return {
         'description': data['description'],
         'tests': data['last_build_result'] == 0,
     }
 
 
-async def get_firefox(url):
+async def get_firefox(name):
     def get_us(d, key):
         return d.get(key, {}).get('en-US')
 
-    api_url = re.sub(
-        'mozilla.org/[^/]*/firefox', 'mozilla.org/api/v3/addons', url)
+    api_url = 'https://addons.mozilla.org/api/v3/addons/addon/' + name
     data = await get_json(api_url)
 
     return {
