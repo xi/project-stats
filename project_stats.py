@@ -1,4 +1,3 @@
-from functools import total_ordering
 import argparse
 import asyncio
 import logging
@@ -6,10 +5,11 @@ import os
 import re
 import subprocess
 import sys
+from functools import total_ordering
 
-from dateutil import parser as dt
 import aiohttp
 import yaml
+from dateutil import parser as dt
 
 try:
     from cheesecake.cheesecake_index import Cheesecake
@@ -71,13 +71,13 @@ def r_get(d, *keys):
 
 
 @total_ordering
-class Claims(object):
+class Claims:
     def __init__(self):
         self._list = []
 
     def _index(self, key):
         i = 0
-        for k, value in self._list:
+        for k, _ in self._list:
             if key == k:
                 return i
             i += 1
@@ -96,11 +96,12 @@ class Claims(object):
     def values(self):
         return [value for value, sources in self._list]
 
-    def format(self, show_sources=True):
+    def format(self, *, show_sources=True):
         def _format_claim(value, sources):
             s = str(value)
             if show_sources:
-                s += ' (%s)' % ', '.join(sources)
+                joined = ', '.join(sources)
+                s += f' ({joined})'
             return s
         return '; '.join([_format_claim(v, srcs) for v, srcs in self._list])
 
@@ -108,7 +109,7 @@ class Claims(object):
         return self.values() < other.values()
 
 
-class ClaimsDict(object):
+class ClaimsDict:
     def __init__(self, keys, short=9):
         self._keys = keys
         self._short = short
@@ -137,7 +138,7 @@ class ClaimsDict(object):
         except KeyError:
             return default
 
-    def format(self, short=False, indent=0, show_sources=True):
+    def format(self, *, short=False, indent=0, show_sources=True):
         keys = self._keys[:self._short] if short else self._keys
         lines = []
         for key in keys:
@@ -145,7 +146,7 @@ class ClaimsDict(object):
             formated_value = value.format(show_sources=show_sources)
             if not formated_value:
                 continue
-            lines.append(' ' * indent + '%s: %s' % (key, formated_value))
+            lines.append(' ' * indent + f'{key}: {formated_value}')
         return '\n'.join(lines)
 
 
@@ -167,7 +168,7 @@ async def get_json(url, user=None, token=None):
     if user is not None:
         # FIXME: not very robust
         url += '&' if '?' in url else '?'
-        url += 'login=%s&token=%s' % (user, token)
+        url += f'login={user}&token={token}'
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
@@ -231,7 +232,8 @@ async def get_gitlab(_id, token=None):
     data, issues, pulls = await asyncio.gather(
         _get_json(''),
         _get_json('/issues?state=opened'),
-        _get_json('/merge_requests?state=opened'))
+        _get_json('/merge_requests?state=opened'),
+    )
 
     return {
         'name': data['name'],
@@ -248,7 +250,7 @@ async def get_gitlab(_id, token=None):
 
 async def get_local(path):
     def git(cmd, *args):
-        _cmd = ['git', '-C', path, cmd] + list(args)
+        _cmd = ['git', '-C', path, cmd, *args]
         return subprocess.check_output(_cmd).decode('utf8')
 
     def get_latest_tag():
@@ -276,7 +278,7 @@ async def get_local(path):
 
 
 async def get_pypi(name):
-    data = await get_json('https://pypi.org/pypi/{}/json'.format(name))
+    data = await get_json(f'https://pypi.org/pypi/{name}/json')
     return {
         'version': data['info']['version'],
         'description': data['info']['summary'],
@@ -299,7 +301,8 @@ async def get_npm(name):
         'time.created',
         'time.modified',
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
+        stderr=asyncio.subprocess.PIPE,
+    )
     stdout, stderr = await process.communicate()
     if process.returncode != 0:
         return
@@ -382,7 +385,8 @@ async def get_project(key, project, config):
 def get_projects(projects_config, config):
     projects_list = aiorun(asyncio.gather(*[
         get_project(key, project, config)
-        for key, project in projects_config.items()]))
+        for key, project in projects_config.items()
+    ]))
 
     projects = {}
     for key, project in zip(projects_config.keys(), projects_list):
@@ -406,7 +410,7 @@ def select_config(args):
             if os.path.exists(path):
                 return path
 
-        print('No config file available. Tried %s.' % ', '.join(choices))
+        print(f'No config file available. Tried {", ".join(choices)}.')
         sys.exit(1)
 
 
@@ -422,20 +426,20 @@ def parse_args():
     parser.add_argument(
         '-l', '--list',
         action='store_true',
-        help='only list projects; do not show any stats')
+        help='only list projects; do not show any stats',
+    )
     parser.add_argument(
         '-s', '--short',
         action='store_true',
-        help='show only basic stats')
+        help='show only basic stats',
+    )
     parser.add_argument('-c', '--config')
-    parser.add_argument(
-        '-z', '--sort',
-        metavar='KEY',
-        help='sort by key')
+    parser.add_argument('-z', '--sort', metavar='KEY', help='sort by key')
     parser.add_argument(
         '-S', '--show-sources',
         action='store_true',
-        help='show a source for each claim')
+        help='show a source for each claim',
+    )
 
     return parser.parse_args()
 
@@ -464,11 +468,12 @@ def main():
                 claim = projects[key][args.sort]
                 print(key, claim.format(show_sources=False))
             else:
-                claims = projects[key]
-                print('%s\n%s\n' % (key, claims.format(
+                print(key)
+                print(projects[key].format(
                     indent=2,
                     short=args.short,
-                    show_sources=args.show_sources)))
+                    show_sources=args.show_sources,
+                ))
 
 
 if __name__ == '__main__':
