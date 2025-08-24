@@ -51,9 +51,8 @@ def aiorun(future):
     """Return value of a future synchronously."""
     container = []
 
-    @asyncio.coroutine
-    def wrapper():
-        result = yield from future
+    async def wrapper():
+        result = await future
         container.append(result)
 
     loop = asyncio.get_event_loop()
