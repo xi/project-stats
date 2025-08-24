@@ -446,7 +446,7 @@ def main():
 
     keys = config['projects'].keys()
     if args.query is not None:
-        keys = [k for k in keys if args.query.lower() in k.lower()]
+        keys = [k for k in keys if args.query.casefold() in k.casefold()]
 
     if args.list and args.sort is None:
         for key in keys:
